@@ -14,34 +14,36 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func fetch() float64{
+func fetch() (float64,float64){
 	resp,err := http.Get("https://data-asg.goldprice.org/dbXRates/USD")
   if err!= nil{
     fmt.Println("Error:",err)
-    return 0
+    return 0,0
   }
   defer resp.Body.Close()
 
   body,err :=ioutil.ReadAll(resp.Body)
   if err!= nil{
     fmt.Println("Read Error:",err)
-    return 0
+    return 0,0
   }
 
   var result struct{
       Items [] struct{
         XAUPrice float64 `json:"xauPrice"`
+		XAGPrice float64 `json:"xagPrice"`
       }`json:"items"`
   }
 
   err = json.Unmarshal(body ,&result)
   if err!= nil{
     fmt.Println("JSON parse error:",err)
-    return 0
+    return 0,0
   }
 
-  fmt.Println("Price:",result.Items[0].XAUPrice)
-  return result.Items[0].XAUPrice
+  fmt.Println("Price Gold:",result.Items[0].XAUPrice)
+  fmt.Println("Price Silver:",result.Items[0].XAGPrice)
+  return result.Items[0].XAUPrice , result.Items[0].XAGPrice
 }
 
 func main() {
@@ -80,14 +82,14 @@ func main() {
 	}()
 
 	for{
-				goldPrice := fetch()
-				returnText := fmt.Sprintf("Gold Price Currently:%v",goldPrice)
+				goldPrice,silverPrice := fetch()
+				returnText := fmt.Sprintf("Gold Price Currently:%v \nSilver Price Currently:%v",goldPrice,silverPrice)
 
 				for id:= range chatIDs{
 				msg := tgbotapi.NewMessage(id,returnText)
 				bot.Send(msg)	
 				}
-				time.Sleep(30 * time.Second)
+				time.Sleep(5 * time.Second)
 		
 	}
 }
