@@ -82,7 +82,12 @@ func main() {
 				
 				userInput := update.Message.Text
 				userInput = strings.ToLower(userInput)
-				if userInput == "gold" || userInput == "gold price" {
+
+				if userInput == "/start"{
+					reply := "Welcome To Potato Gold Bot, A Bot To Track Gold/Silver Prices, You can select how much message you get per interval,or set a price to track and notify you if the price exceeds or drop below the treshold. Start with \"gold\" or \"silver\" or \"price\" or /interval or /setTarget"
+					replyMessage := tgbotapi.NewMessage(id,reply)
+					bot.Send(replyMessage)
+				}else if userInput == "gold" || userInput == "gold price" {
 					goldPrice,_ := fetch()
 					reply := fmt.Sprintf("Gold Price is currently:%.2f USD",goldPrice)
 					replyMessage := tgbotapi.NewMessage(id,reply)
@@ -101,6 +106,7 @@ func main() {
 					replyMessage := tgbotapi.NewMessage(id,"I Dont Understand, Try \"gold\" or \"silver\" or \"price\"")
 					bot.Send((replyMessage))
 				}
+
 				
 				//reply := tgbotapi.NewMessage(id, "You said: " + userInput)
 				
