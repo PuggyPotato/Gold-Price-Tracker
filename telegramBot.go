@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -77,9 +78,37 @@ func main() {
 				id := update.Message.Chat.ID
 				chatIDs[id] = true // track this chat
 				log.Printf("New chat ID: %d", id)
+
+				
+				userInput := update.Message.Text
+				userInput = strings.ToLower(userInput)
+				if userInput == "gold" || userInput == "gold price" {
+					goldPrice,_ := fetch()
+					reply := fmt.Sprintf("Gold Price is currently:%.2f USD",goldPrice)
+					replyMessage := tgbotapi.NewMessage(id,reply)
+					bot.Send(replyMessage)
+				}else if userInput == "silver" || userInput == "silver price" {
+					_,silverPrice := fetch()
+					reply := fmt.Sprintf("Silver Price is currently:%.2f USD",silverPrice)
+					replyMessage := tgbotapi.NewMessage(id,reply)
+					bot.Send(replyMessage)
+				}else if userInput == "price"{
+					goldPrice,silverPrice := fetch()
+					reply := fmt.Sprintf("Gold Price is currently:%.2f USD \nSilver Price Is Currently %.2f USD",goldPrice,silverPrice)
+					replyMessage := tgbotapi.NewMessage(id,reply)
+					bot.Send(replyMessage)
+				}else{
+					replyMessage := tgbotapi.NewMessage(id,"I Dont Understand, Try \"gold\" or \"silver\" or \"price\"")
+					bot.Send((replyMessage))
+				}
+				
+				//reply := tgbotapi.NewMessage(id, "You said: " + userInput)
+				
 			}
 		}
 	}()
+
+
 
 	for{
 				goldPrice,silverPrice := fetch()
@@ -89,7 +118,7 @@ func main() {
 				msg := tgbotapi.NewMessage(id,returnText)
 				bot.Send(msg)	
 				}
-				time.Sleep(5 * time.Second)
+				time.Sleep(60 * time.Second)
 		
 	}
 }
