@@ -242,6 +242,14 @@ func main() {
 						
 					}
 					
+				}else if userInput == "/stop"{
+					delete(chatIDs, id)
+					delete(waitingForInterval, id)
+					delete(userIntervals, id)
+					delete(targetPrice, id)
+					delete(waitingForPrice, id)
+					msg := tgbotapi.NewMessage(id,"Succesfully Cleared.")
+					bot.Send(msg)
 				}else{
 					replyMessage := tgbotapi.NewMessage(id,"I Dont Understand, Try \"gold\" or \"silver\" or \"price\"")
 					bot.Send((replyMessage))
