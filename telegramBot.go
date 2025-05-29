@@ -66,13 +66,50 @@ func parseInterval(input string) (int,error){
 			num,err := strconv.Atoi(input)
 			return num,err
 		}
-	}
+}
+
+func parseTarget(input string) (int,bool,bool,error){
+	input = strings.ToLower(strings.TrimSpace(input))
+		if strings.Contains(input,"silver"){
+			if strings.Contains(input,"exceed"){
+				numStr := strings.TrimSpace(strings.Replace(input, "silver exceed", "", 1))
+				num,err :=strconv.Atoi(strings.TrimSpace(numStr))
+				return num ,true,false ,err
+			}else if strings.HasSuffix(input,"below"){
+				numStr := strings.TrimSpace(strings.Replace(input, "silver below", "", 1))
+				num,err :=strconv.Atoi(strings.TrimSpace(numStr))
+				return num ,false,false,err
+			}else{
+			num,err := strconv.Atoi(input)
+			return num,false,false,err
+			}
+		}else if strings.Contains(input,"gold"){
+			if strings.Contains(input,"exceed"){
+				numStr := strings.TrimSpace(strings.Replace(input, "gold exceed", "", 1))
+				num,err :=strconv.Atoi(strings.TrimSpace(numStr))
+				return num ,true,true ,err
+			}else if strings.Contains(input,"below"){
+				numStr := strings.TrimSpace(strings.Replace(input, "gold below", "", 1))
+				num,err :=strconv.Atoi(strings.TrimSpace(numStr))
+				return num ,false,true,err
+			}else{
+			num,err := strconv.Atoi(input)
+			return num,false,true,err
+			}
+		}else{
+			num,err := strconv.Atoi(input)
+			return num,false,true,err
+		}
+		
+}
 
 
 func main() {
 	var chatIDs = make(map[int64] bool)
 	var waitingForInterval = make(map[int64]bool)
 	var userIntervals = make(map[int64]int)
+	var targetPrice = make(map[int64] int)
+	var waitingForPrice = make(map[int64] bool)
 
 
 	err:= godotenv.Load()
@@ -142,7 +179,7 @@ func main() {
 						userIntervals[id] = interval
 						waitingForInterval[id] = false
 
-						msg := tgbotapi.NewMessage(id,"Sucesfully Set.")
+						msg := tgbotapi.NewMessage(id,"Succesfully Set Interval.")
 						bot.Send(msg)
 						
 
@@ -160,6 +197,51 @@ func main() {
 						}(id,interval)
 						
 					}
+				}else if userInput == "/settarget"{
+					replyMessage := tgbotapi.NewMessage(id,"What Is The Targeted Price? eg. Silver exceed 3000...Gold below 3000 ")
+					bot.Send(replyMessage)
+					waitingForPrice[id] = true
+				}else if waitingForPrice[id]{
+					target,above,gold,err := parseTarget(userInput)
+					if err != nil{
+						msg := tgbotapi.NewMessage(id,"Invalid,Try Again.")
+						bot.Send(msg)
+					}else{
+						targetPrice[id] = target
+						waitingForPrice[id] = false
+
+						msg := tgbotapi.NewMessage(id,"Succesfully Set Target.")
+						bot.Send(msg)
+						
+
+						go func(chatID int64,above bool,gold bool,target int){
+								for{
+									goldPrice,silverPrice := fetch()
+								if goldPrice > float64(target) && gold && above{
+									returnText := fmt.Sprintf("Gold Price Exceeded %v \nGold Price Currently:%v",target,goldPrice)
+									msg := tgbotapi.NewMessage(id,returnText)
+									bot.Send(msg)	
+								}else if goldPrice < float64(target) && gold && !above{
+									returnText := fmt.Sprintf("Gold Price Dropped Below %v \nGold Price Currently:%v",target,goldPrice)
+									msg := tgbotapi.NewMessage(id,returnText)
+									bot.Send(msg)
+								}
+								if silverPrice > float64(target) && !gold && above{
+									returnText := fmt.Sprintf("Silver Price Exceeded %v \nSilver Price Currently:%v",target,silverPrice)
+									msg := tgbotapi.NewMessage(id,returnText)
+									bot.Send(msg)	
+								}else if silverPrice < float64(target) && !gold && !above{
+									returnText := fmt.Sprintf("Silver Price Dropped Below %v \nSilver Price Currently:%v",target,silverPrice)
+									msg := tgbotapi.NewMessage(id,returnText)
+									bot.Send(msg)	
+								}
+								time.Sleep(60 * time.Second)
+
+						}
+						}(id,above,gold,target) 
+						
+					}
+					
 				}else{
 					replyMessage := tgbotapi.NewMessage(id,"I Dont Understand, Try \"gold\" or \"silver\" or \"price\"")
 					bot.Send((replyMessage))
